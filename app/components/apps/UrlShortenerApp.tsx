@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Copy, Check, ExternalLink, RefreshCw, Trash2 } from "lucide-react";
+import QRCode from "react-qr-code";
 
 interface HistoryItem {
   id: string;
@@ -259,28 +260,21 @@ export default function UrlShortenerApp({ onAddToRecycleBin, historyRefreshTrigg
                       </div>
                     </div>
 
-                    {/* QR Code Mock */}
+                    {/* QR Code Component */}
                     <div className="flex items-center gap-4 border-t border-dashed border-[#808080] pt-3">
-                      {/* Pixelated QR code block */}
-                      <div className="w-[80px] h-[80px] border-win-in bg-white flex flex-wrap p-1 select-none">
-                        {Array.from({ length: 16 }).map((_, r) => (
-                          <div key={r} className="w-full flex">
-                            {Array.from({ length: 16 }).map((_, c) => {
-                              const isBlack = (r + c) % 2 === 0 || (r * c) % 3 === 0 || (r < 4 && c < 4) || (r > 11 && c < 4) || (r < 4 && c > 11);
-                              return (
-                                <div
-                                  key={c}
-                                  className={`w-[4.5px] h-[4.5px] ${isBlack ? "bg-black" : "bg-white"}`}
-                                />
-                              );
-                            })}
-                          </div>
-                        ))}
+                      {/* Real QR code block */}
+                      <div className="w-[80px] h-[80px] border-win-in bg-white p-1 select-none flex items-center justify-center">
+                        <QRCode
+                          size={70}
+                          style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                          value={result.short_code}
+                          viewBox={`0 0 70 70`}
+                        />
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="text-xs font-bold text-black">Scan QR Code</div>
                         <div className="text-[10px] text-zinc-600 leading-tight">
-                          This pixelated bar-code contains the shortened link. Scan with your mobile camera to test redirect speed.
+                          Scan this code with your mobile camera to instantly access the shortened redirect address.
                         </div>
                       </div>
                     </div>

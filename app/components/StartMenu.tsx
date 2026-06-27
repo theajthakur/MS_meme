@@ -55,10 +55,10 @@ export default function StartMenu({ isOpen, onClose, onOpenApp, onShutDown }: St
       description: "Interactive canvas board",
     },
     {
-      id: "minesweeper",
-      label: "Classic Minesweeper",
-      icon: <span className="text-sm">💣</span>,
-      description: "Play standard 9x9 game",
+      id: "gta-vice-city",
+      label: "GTA India",
+      icon: <img src="https://cdn2.steamgriddb.com/icon/722caafb4825ef5d8670710fa29087cf/32/256x256.png" className="w-4 h-4 object-contain select-none" alt="" />,
+      description: "Simulated radio & cheats",
     },
     {
       id: "my-computer",

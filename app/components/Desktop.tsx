@@ -9,8 +9,9 @@ import StartMenu from "./StartMenu";
 import UrlShortenerApp from "./apps/UrlShortenerApp";
 import NotepadApp from "./apps/NotepadApp";
 import PaintApp from "./apps/PaintApp";
-import MinesweeperApp from "./apps/MinesweeperApp";
+import GtaViceCityApp from "./apps/GtaViceCityApp";
 import MyComputerApp from "./apps/MyComputerApp";
+import { motion } from "framer-motion";
 
 import { Monitor, FileText, Paintbrush, Trash2, FolderSync } from "lucide-react";
 
@@ -96,18 +97,18 @@ export default function Desktop() {
       icon: <Paintbrush size={14} className="text-pink-600 select-none" />,
     },
     {
-      id: "minesweeper",
-      title: "Minesweeper",
+      id: "gta-vice-city",
+      title: "GTA: India",
       isOpen: false,
       isMinimized: false,
       isMaximized: false,
       isActive: false,
       zIndex: 1,
-      x: 320,
-      y: 150,
-      width: 250,
-      height: 290,
-      icon: <span className="text-sm select-none">💣</span>,
+      x: 220,
+      y: 100,
+      width: 480,
+      height: 420,
+      icon: <img src="https://cdn2.steamgriddb.com/icon/722caafb4825ef5d8670710fa29087cf/32/256x256.png" className="w-4 h-4 object-contain select-none" alt="GTA VC" />,
     },
     {
       id: "my-computer",
@@ -165,6 +166,30 @@ export default function Desktop() {
     x: 0,
     y: 0,
   });
+  const [spawnedTanks, setSpawnedTanks] = useState<{ id: string; x: number; y: number }[]>([]);
+  const [cheatNotification, setCheatNotification] = useState("");
+
+  const handleCheatCode = (cheat: string) => {
+    setCheatNotification(`CHEAT CODE ACTIVATED: ${cheat}`);
+    setTimeout(() => setCheatNotification(""), 3000);
+
+    if (cheat === "ASPIRINE") {
+      // Heal storage!
+      localStorage.removeItem("url_shortener_history");
+      setHistoryTrigger((p) => p + 1);
+    } else if (cheat === "PANZER") {
+      setSpawnedTanks((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          x: 150 + Math.random() * 300,
+          y: 150 + Math.random() * 300,
+        },
+      ]);
+    } else if (cheat === "BIGBANG") {
+      setWindows((prev) => prev.map((w) => ({ ...w, isOpen: false, isActive: false })));
+    }
+  };
 
   // Intercept right-clicks (except child defaultPrevented elements) and Ctrl hotkeys
   useEffect(() => {
@@ -184,21 +209,76 @@ export default function Desktop() {
       });
     };
 
+    let keyBuffer = "";
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Exit full screen if active
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch((err) => console.error("Error exiting fullscreen:", err));
+        }
+        // Close GTA India game window
+        setWindows((prev) =>
+          prev.map((w) =>
+            w.id === "gta-vice-city" ? { ...w, isOpen: false, isActive: false } : w
+          )
+        );
+        return;
+      }
+
+      // Capture keystrokes for global cheats
+      if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+        keyBuffer += e.key.toUpperCase();
+        if (keyBuffer.length > 20) {
+          keyBuffer = keyBuffer.slice(-20);
+        }
+
+        if (keyBuffer.endsWith("ASPIRINE")) {
+          handleCheatCode("ASPIRINE");
+          keyBuffer = "";
+        } else if (keyBuffer.endsWith("PANZER")) {
+          handleCheatCode("PANZER");
+          keyBuffer = "";
+        } else if (keyBuffer.endsWith("BIGBANG")) {
+          handleCheatCode("BIGBANG");
+          keyBuffer = "";
+        }
+      }
+
       if (e.ctrlKey) {
+        const key = e.key.toLowerCase();
+        // Allow Copy, Paste, Cut, Select All, Undo, Redo
+        const allowedKeys = ["c", "v", "x", "a", "z", "y"];
+        if (allowedKeys.includes(key)) {
+          return;
+        }
+
         e.preventDefault();
         // Map Ctrl+R to desktop refresh
-        if (e.key.toLowerCase() === "r") {
+        if (key === "r") {
           setHistoryTrigger((p) => p + 1);
         }
       }
     };
 
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        // Close GTA India game window when exiting fullscreen
+        setWindows((prev) =>
+          prev.map((w) =>
+            w.id === "gta-vice-city" ? { ...w, isOpen: false, isActive: false } : w
+          )
+        );
+      }
+    };
+
     window.addEventListener("contextmenu", handleContextMenu);
     window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => {
       window.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -239,7 +319,7 @@ export default function Desktop() {
         })
       );
     }
-    
+
     // Listen to localStorage changes
     window.addEventListener("storage", loadDeleted);
     return () => window.removeEventListener("storage", loadDeleted);
@@ -264,6 +344,11 @@ export default function Desktop() {
   };
 
   const openApp = (id: string) => {
+    if (id === "gta-vice-city") {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => console.log(err));
+      }
+    }
     setWindows((prev) =>
       prev.map((w) => {
         if (w.id === id) {
@@ -327,7 +412,7 @@ export default function Desktop() {
     if (storedHistory) {
       try {
         currentHistory = JSON.parse(storedHistory);
-      } catch (e) {}
+      } catch (e) { }
     }
     const updatedHistory = [item, ...currentHistory];
     localStorage.setItem("url_shortener_history", JSON.stringify(updatedHistory));
@@ -410,18 +495,18 @@ export default function Desktop() {
         icon: <Paintbrush size={14} className="text-pink-600 select-none" />,
       },
       {
-        id: "minesweeper",
-        title: "Minesweeper",
+        id: "gta-vice-city",
+        title: "GTA: India",
         isOpen: false,
         isMinimized: false,
         isMaximized: false,
         isActive: false,
         zIndex: 1,
-        x: 320,
-        y: 150,
-        width: 250,
-        height: 290,
-        icon: <span className="text-sm select-none">💣</span>,
+        x: 220,
+        y: 100,
+        width: 480,
+        height: 420,
+        icon: <img src="https://cdn2.steamgriddb.com/icon/722caafb4825ef5d8670710fa29087cf/32/256x256.png" className="w-4 h-4 object-contain select-none" alt="GTA VC" />,
       },
       {
         id: "my-computer",
@@ -530,14 +615,28 @@ export default function Desktop() {
       icon: <Paintbrush size={32} className="text-pink-600" />,
     },
     {
-      id: "minesweeper",
-      label: "Minesweeper",
-      icon: <span className="text-2xl select-none">💣</span>,
+      id: "gta-vice-city",
+      label: "GTA India",
+      icon: <img src="https://cdn2.steamgriddb.com/icon/722caafb4825ef5d8670710fa29087cf/32/256x256.png" className="w-8 h-8 object-contain select-none" alt="GTA VC" />,
     },
   ];
 
   return (
     <div className="relative w-screen h-screen bg-[#008080] overflow-hidden select-none crt-effect font-win-sans pb-[40px]">
+      {/* Draggable Panzer easter egg tanks */}
+      {spawnedTanks.map((tank) => (
+        <motion.div
+          key={tank.id}
+          drag
+          dragMomentum={false}
+          dragElastic={0}
+          initial={{ x: tank.x, y: tank.y }}
+          className="absolute z-[9999] text-5xl cursor-grab active:cursor-grabbing select-none"
+        >
+          🚜
+        </motion.div>
+      ))}
+
       {/* Desktop Grid Layout for Icons */}
       <div className="absolute top-4 left-4 grid grid-flow-row gap-6 justify-start items-center z-0 select-none">
         {desktopIcons.map((icon) => (
@@ -558,28 +657,32 @@ export default function Desktop() {
       </div>
 
       {/* Windows Manager Overlay */}
-      {windows.map((win) => (
-        <Window
-          key={win.id}
-          id={win.id}
-          title={win.title}
-          isOpen={win.isOpen}
-          isMinimized={win.isMinimized}
-          isMaximized={win.isMaximized}
-          isActive={win.isActive}
-          zIndex={win.zIndex}
-          onClose={() => closeWindow(win.id)}
-          onMinimize={() => minimizeWindow(win.id)}
-          onMaximize={() => maximizeWindow(win.id)}
-          onFocus={() => focusWindow(win.id)}
-          initialX={win.x}
-          initialY={win.y}
-          width={win.width}
-          height={win.height}
-          icon={win.icon}
-          menuItems={
-            win.id === "url-shortener"
-              ? [
+      {windows.map((win) => {
+        if (win.id === "gta-vice-city") {
+          return null;
+        }
+        return (
+          <Window
+            key={win.id}
+            id={win.id}
+            title={win.title}
+            isOpen={win.isOpen}
+            isMinimized={win.isMinimized}
+            isMaximized={win.isMaximized}
+            isActive={win.isActive}
+            zIndex={win.zIndex}
+            onClose={() => closeWindow(win.id)}
+            onMinimize={() => minimizeWindow(win.id)}
+            onMaximize={() => maximizeWindow(win.id)}
+            onFocus={() => focusWindow(win.id)}
+            initialX={win.x}
+            initialY={win.y}
+            width={win.width}
+            height={win.height}
+            icon={win.icon}
+            menuItems={
+              win.id === "url-shortener"
+                ? [
                   {
                     label: "File",
                     items: [
@@ -595,185 +698,198 @@ export default function Desktop() {
                     ],
                   },
                 ]
-              : win.id === "readme"
-              ? [
-                  {
-                    label: "File",
-                    items: [{ label: "Close Notepad", onClick: () => closeWindow("readme") }],
-                  },
-                ]
-              : win.id === "recycle-bin"
-              ? [
-                  {
-                    label: "File",
-                    items: [
-                      { label: "Empty Recycle Bin", onClick: handleEmptyRecycleBin },
-                      { label: "Close Bin", onClick: () => closeWindow("recycle-bin") },
-                    ],
-                  },
-                ]
-              : undefined
-          }
-        >
-          {/* App Router client components injection */}
-          {win.id === "welcome" && (
-            <div className="flex flex-col h-full bg-[#dfdfdf] p-4 text-xs justify-between select-none text-black">
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center justify-center p-2 bg-[#c0c0c0] border-win-out w-20 h-20 shrink-0">
-                  <span className="text-4xl">👋</span>
+                : win.id === "readme"
+                  ? [
+                    {
+                      label: "File",
+                      items: [{ label: "Close Notepad", onClick: () => closeWindow("readme") }],
+                    },
+                  ]
+                  : win.id === "recycle-bin"
+                    ? [
+                      {
+                        label: "File",
+                        items: [
+                          { label: "Empty Recycle Bin", onClick: handleEmptyRecycleBin },
+                          { label: "Close Bin", onClick: () => closeWindow("recycle-bin") },
+                        ],
+                      },
+                    ]
+                    : undefined
+            }
+          >
+            {/* App Router client components injection */}
+            {win.id === "welcome" && (
+              <div className="flex flex-col h-full bg-[#dfdfdf] p-4 text-xs justify-between select-none text-black">
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center justify-center p-2 bg-[#c0c0c0] border-win-out w-20 h-20 shrink-0">
+                    <span className="text-4xl">👋</span>
+                  </div>
+                  <div className="space-y-3">
+                    <h2 className="text-sm font-bold">Welcome to the URL Shortener OS!</h2>
+                    <p className="text-zinc-700 leading-normal">
+                      This developer showcase replicates the Microsoft Windows 98 desktop environment.
+                    </p>
+                    <p className="text-zinc-800 leading-normal font-semibold">
+                      For the most immersive, pixel-perfect, and authentic experience, we highly recommend switching your browser to full screen mode.
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  <h2 className="text-sm font-bold">Welcome to the URL Shortener OS!</h2>
-                  <p className="text-zinc-700 leading-normal">
-                    This developer showcase replicates the Microsoft Windows 98 desktop environment.
-                  </p>
-                  <p className="text-zinc-800 leading-normal font-semibold">
-                    For the most immersive, pixel-perfect, and authentic experience, we highly recommend switching your browser to full screen mode.
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex flex-col gap-3 mt-4">
-                <button
-                  onClick={() => {
-                    if (!document.fullscreenElement) {
-                      document.documentElement.requestFullscreen().catch((err) => {
-                        console.error(err);
-                      });
-                    }
-                    closeWindow("welcome");
-                  }}
-                  className="border-win-button py-2 px-4 font-bold text-center active:border-win-button-depressed outline-none flex items-center justify-center gap-2 hover:bg-[#c0c0c0] text-sm"
-                >
-                  🖥️ Go Fullscreen Now
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-zinc-400 pt-3 mt-2">
-                <label className="flex items-center gap-2 cursor-pointer font-semibold">
-                  <input
-                    type="checkbox"
-                    checked={showWelcomeCheckbox}
-                    onChange={(e) => {
-                      setShowWelcomeCheckbox(e.target.checked);
-                      localStorage.setItem("show_welcome_screen", e.target.checked ? "true" : "false");
+                <div className="flex flex-col gap-3 mt-4">
+                  <button
+                    onClick={() => {
+                      if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch((err) => {
+                          console.error(err);
+                        });
+                      }
+                      closeWindow("welcome");
                     }}
-                    className="cursor-pointer"
-                  />
-                  <span>Show this screen at startup</span>
-                </label>
-                
-                <button
-                  onClick={() => closeWindow("welcome")}
-                  className="border-win-button px-5 py-1 font-bold active:border-win-button-depressed outline-none text-xs"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
-          {win.id === "url-shortener" && (
-            <UrlShortenerApp
-              onAddToRecycleBin={handleAddToRecycleBin}
-              historyRefreshTrigger={historyTrigger}
-              onStorageLimitReached={() => openApp("storage-error")}
-            />
-          )}
-          {win.id === "readme" && <NotepadApp />}
-          {win.id === "paint" && <PaintApp />}
-          {win.id === "minesweeper" && <MinesweeperApp />}
-          {win.id === "my-computer" && <MyComputerApp />}
-          {win.id === "storage-error" && (
-            <div className="flex flex-col h-full justify-between p-3 select-none text-black bg-[#c0c0c0] font-win-sans">
-              <div className="flex gap-4 items-center mt-1">
-                {/* Red cross circle error icon */}
-                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white text-xl font-bold font-win-mono shadow-md border-win-out-thin select-none shrink-0">
-                  X
+                    className="border-win-button py-2 px-4 font-bold text-center active:border-win-button-depressed outline-none flex items-center justify-center gap-2 hover:bg-[#c0c0c0] text-sm"
+                  >
+                    🖥️ Go Fullscreen Now
+                  </button>
                 </div>
-                <div className="flex-1 text-xs">
-                  <h3 className="font-bold mb-1">Local Disk (C:) Storage Full</h3>
-                  <p className="text-zinc-800">
-                    The URL Shortener database has reached the limit of 5 links (25.0 GB used of 25.0 GB allocated).
-                  </p>
-                  <p className="text-zinc-800 mt-1">
-                    Delete existing links or empty the Recycle Bin to free up space.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => closeWindow("storage-error")}
-                className="border-win-button font-bold py-1 px-8 active:border-win-button-depressed outline-none self-center text-xs mt-3.5"
-              >
-                OK
-              </button>
-            </div>
-          )}
-          {win.id === "recycle-bin" && (
-            <div className="flex flex-col h-full bg-[#c0c0c0] font-win-sans text-black select-none">
-              {/* Toolbar */}
-              <div className="flex gap-2 border-b border-[#808080] pb-2 mb-2 px-1 text-xs">
-                <button
-                  onClick={handleEmptyRecycleBin}
-                  disabled={deletedLinks.length === 0}
-                  className="border-win-button px-3 py-1 font-bold flex items-center gap-1 active:border-win-button-depressed outline-none disabled:opacity-50"
-                >
-                  <Trash2 size={12} /> Empty Recycle Bin
-                </button>
-              </div>
 
-              {/* Items List */}
-              <div className="flex-1 bg-white border-win-in overflow-auto">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead>
-                    <tr className="bg-[#dfdfdf] border-b border-[#808080] sticky top-0 font-bold">
-                      <th className="px-2 py-1.5 border-r border-[#808080]">Name</th>
-                      <th className="px-2 py-1.5 border-r border-[#808080]">Original Location</th>
-                      <th className="px-2 py-1.5 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {deletedLinks.length > 0 ? (
-                      deletedLinks.map((item) => (
-                        <tr key={item.id} className="hover:bg-zinc-50 border-b border-zinc-200">
-                          <td className="px-2 py-1.5 border-r font-win-mono truncate max-w-[120px]">
-                            {item.short_code}
-                          </td>
-                          <td className="px-2 py-1.5 border-r font-win-mono text-zinc-600 truncate max-w-[200px]" title={item.original_url}>
-                            {item.original_url}
-                          </td>
-                          <td className="px-2 py-1.5 text-center flex justify-center gap-2">
-                            <button
-                              onClick={() => handleRestoreLink(item)}
-                              className="border-win-button px-2 py-0.5 text-[10px] font-bold flex items-center gap-0.5"
-                              title="Restore link to active history"
-                            >
-                              <FolderSync size={10} /> Restore
-                            </button>
-                            <button
-                              onClick={() => handlePermanentDelete(item.id)}
-                              className="border-win-button px-2 py-0.5 text-[10px] font-bold text-red-700"
-                              title="Delete permanently"
-                            >
-                              Destroy
-                            </button>
+                <div className="flex items-center justify-between border-t border-zinc-400 pt-3 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={showWelcomeCheckbox}
+                      onChange={(e) => {
+                        setShowWelcomeCheckbox(e.target.checked);
+                        localStorage.setItem("show_welcome_screen", e.target.checked ? "true" : "false");
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <span>Show this screen at startup</span>
+                  </label>
+
+                  <button
+                    onClick={() => closeWindow("welcome")}
+                    className="border-win-button px-5 py-1 font-bold active:border-win-button-depressed outline-none text-xs"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+            {win.id === "url-shortener" && (
+              <UrlShortenerApp
+                onAddToRecycleBin={handleAddToRecycleBin}
+                historyRefreshTrigger={historyTrigger}
+                onStorageLimitReached={() => openApp("storage-error")}
+              />
+            )}
+            {win.id === "readme" && <NotepadApp />}
+            {win.id === "paint" && <PaintApp />}
+            {win.id === "gta-vice-city" && <GtaViceCityApp />}
+            {win.id === "my-computer" && <MyComputerApp />}
+            {win.id === "storage-error" && (
+              <div className="flex flex-col h-full justify-between p-3 select-none text-black bg-[#c0c0c0] font-win-sans">
+                <div className="flex gap-4 items-center mt-1">
+                  {/* Red cross circle error icon */}
+                  <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white text-xl font-bold font-win-mono shadow-md border-win-out-thin select-none shrink-0">
+                    X
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <h3 className="font-bold mb-1">Local Disk (C:) Storage Full</h3>
+                    <p className="text-zinc-800">
+                      The URL Shortener database has reached the limit of 5 links (25.0 GB used of 25.0 GB allocated).
+                    </p>
+                    <p className="text-zinc-800 mt-1">
+                      Delete existing links or empty the Recycle Bin to free up space.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => closeWindow("storage-error")}
+                  className="border-win-button font-bold py-1 px-8 active:border-win-button-depressed outline-none self-center text-xs mt-3.5"
+                >
+                  OK
+                </button>
+              </div>
+            )}
+            {win.id === "recycle-bin" && (
+              <div className="flex flex-col h-full bg-[#c0c0c0] font-win-sans text-black select-none">
+                {/* Toolbar */}
+                <div className="flex gap-2 border-b border-[#808080] pb-2 mb-2 px-1 text-xs">
+                  <button
+                    onClick={handleEmptyRecycleBin}
+                    disabled={deletedLinks.length === 0}
+                    className="border-win-button px-3 py-1 font-bold flex items-center gap-1 active:border-win-button-depressed outline-none disabled:opacity-50"
+                  >
+                    <Trash2 size={12} /> Empty Recycle Bin
+                  </button>
+                </div>
+
+                {/* Items List */}
+                <div className="flex-1 bg-white border-win-in overflow-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-[#dfdfdf] border-b border-[#808080] sticky top-0 font-bold">
+                        <th className="px-2 py-1.5 border-r border-[#808080]">Name</th>
+                        <th className="px-2 py-1.5 border-r border-[#808080]">Original Location</th>
+                        <th className="px-2 py-1.5 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deletedLinks.length > 0 ? (
+                        deletedLinks.map((item) => (
+                          <tr key={item.id} className="hover:bg-zinc-50 border-b border-zinc-200">
+                            <td className="px-2 py-1.5 border-r font-win-mono truncate max-w-[120px]">
+                              {item.short_code}
+                            </td>
+                            <td className="px-2 py-1.5 border-r font-win-mono text-zinc-600 truncate max-w-[200px]" title={item.original_url}>
+                              {item.original_url}
+                            </td>
+                            <td className="px-2 py-1.5 text-center flex justify-center gap-2">
+                              <button
+                                onClick={() => handleRestoreLink(item)}
+                                className="border-win-button px-2 py-0.5 text-[10px] font-bold flex items-center gap-0.5"
+                                title="Restore link to active history"
+                              >
+                                <FolderSync size={10} /> Restore
+                              </button>
+                              <button
+                                onClick={() => handlePermanentDelete(item.id)}
+                                className="border-win-button px-2 py-0.5 text-[10px] font-bold text-red-700"
+                                title="Delete permanently"
+                              >
+                                Destroy
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={3} className="text-center py-12 text-zinc-400">
+                            <div className="text-2xl mb-1">🗑️</div>
+                            <div className="font-bold">Recycle Bin is empty.</div>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={3} className="text-center py-12 text-zinc-400">
-                          <div className="text-2xl mb-1">🗑️</div>
-                          <div className="font-bold">Recycle Bin is empty.</div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
-        </Window>
-      ))}
+            )}
+          </Window>
+        )
+      })}
+
+      {windows.find((w) => w.id === "gta-vice-city")?.isOpen && (
+        <div className="fixed inset-0 z-[9999999] bg-black select-none pointer-events-none cursor-none flex items-center justify-center">
+          <GtaViceCityApp />
+        </div>
+      )}
+
+      {cheatNotification && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 bg-[#ff007f] text-white border-2 border-white px-6 py-2 z-[99999999] font-bold text-xs tracking-widest animate-pulse font-win-sans shadow-lg select-none">
+          🌴 {cheatNotification}
+        </div>
+      )}
 
       {/* Taskbar & Start Menu */}
       <StartMenu
@@ -842,12 +958,12 @@ export default function Desktop() {
             </button>
             <button
               onClick={() => {
-                openApp("minesweeper");
+                openApp("gta-vice-city");
                 setContextMenu({ ...contextMenu, visible: false });
               }}
               className="w-full text-left px-3 py-1.5 hover:bg-[#000080] hover:text-white cursor-default select-none outline-none flex items-center gap-2"
             >
-              <span>💣</span> Play Minesweeper
+              <img src="https://cdn2.steamgriddb.com/icon/722caafb4825ef5d8670710fa29087cf/32/256x256.png" className="w-4 h-4 object-contain" alt="" /> Play GTA India
             </button>
             <button
               onClick={() => {

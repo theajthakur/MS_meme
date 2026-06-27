@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
+import { shortenUrl, checkHealth } from "../../../lib/shortener";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Make sure we have a URL to shorten
+    // Validate request parameter
     if (!body.url) {
       return NextResponse.json(
         { error: "URL parameter is required" },
@@ -12,38 +13,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const backendUrl = process.env.BACKEND_URL || "https://fastapi-url-shortener-a6zc.onrender.com";
-    
-    // Call the FastAPI backend POST /short/
-    const response = await fetch(`${backendUrl}/short/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ url: body.url }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorMessage = "Backend server error";
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.detail || errorMessage;
-      } catch (e) {
-        errorMessage = errorText || errorMessage;
-      }
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
+    // Call Axios client wrapper
+    const data = await shortenUrl(body.url);
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error("API proxy error:", error);
+    console.error("[Proxy API POST] Error:", error.message);
     return NextResponse.json(
       { error: error.message || "Failed to connect to backend service" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    // Call Axios client wrapper health check
+    const data = await checkHealth();
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error("[Proxy API GET] Health check error:", error.message);
+    return NextResponse.json(
+      { error: error.message || "Failed to ping backend service" },
       { status: 500 }
     );
   }

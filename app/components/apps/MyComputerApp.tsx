@@ -55,11 +55,9 @@ export default function MyComputerApp() {
     setPingError(null);
     const start = performance.now();
     try {
-      // Fetch /api/shorten with empty or invalid POST to trigger fast validation response
+      // Call GET /api/shorten to query backend health endpoint
       const res = await fetch("/api/shorten", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: "" }),
+        method: "GET",
       });
       await res.json();
       const end = performance.now();
