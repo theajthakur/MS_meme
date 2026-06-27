@@ -1,26 +1,153 @@
 @import "tailwindcss";
 
+@theme {
+  --color-win-bg: #008080;
+  --color-win-gray: #c0c0c0;
+  --color-win-light: #ffffff;
+  --color-win-shadow: #808080;
+  --color-win-blue: #000080;
+  --color-win-blue-light: #1084d0;
+  --color-win-dark: #0000 black;
+  
+  --font-win-sans: "MS Sans Serif", Tahoma, Arial, sans-serif;
+  --font-win-mono: "Courier New", Courier, monospace;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #008080;
+  --foreground: #000000;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base Body Styles */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #008080 !important;
+  color: #000000;
+  font-family: "MS Sans Serif", Tahoma, Arial, sans-serif;
+  font-size: 14px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Retro 3D Bevel Borders */
+.border-win-out {
+  border: 2px solid;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+  box-shadow: inset 1px 1px 0px 0px #ffffff,
+              1px 1px 0px 0px #000000;
+}
+
+.border-win-in {
+  border: 2px solid;
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-right-color: #ffffff;
+  border-bottom-color: #ffffff;
+  box-shadow: inset 1px 1px 0px 0px #000000,
+              1px 1px 0px 0px #c0c0c0;
+}
+
+.border-win-out-thin {
+  border: 1px solid;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+}
+
+.border-win-in-thin {
+  border: 1px solid;
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-right-color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+.border-win-button {
+  border: 2px solid;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+  box-shadow: 1px 1px 0px 0px #000000;
+  background-color: #c0c0c0;
+  color: #000000;
+  cursor: pointer;
+}
+
+.border-win-button:active:not(:disabled), .border-win-button-depressed {
+  border: 2px solid;
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-right-color: #ffffff;
+  border-bottom-color: #ffffff;
+  box-shadow: inset 1px 1px 0px 0px #000000;
+  background-color: #c0c0c0;
+}
+
+.border-win-button:disabled {
+  color: #808080;
+  text-shadow: 1px 1px 0px #ffffff;
+  cursor: not-allowed;
+}
+
+/* Custom Retro Scrollbar */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+::-webkit-scrollbar-track {
+  background: #dfdfdf;
+  background-image: radial-gradient(#c0c0c0 25%, transparent 25%),
+                    radial-gradient(#c0c0c0 25%, transparent 25%);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: 2px solid;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+  box-shadow: 1px 1px 0px 0px #000000;
+}
+::-webkit-scrollbar-button {
+  background: #c0c0c0;
+  width: 16px;
+  height: 16px;
+  border: 2px solid;
+  border-top-color: #ffffff;
+  border-left-color: #ffffff;
+  border-right-color: #808080;
+  border-bottom-color: #808080;
+}
+
+/* Scanline/CRT Effect overlay */
+.crt-effect {
+  position: relative;
+}
+.crt-effect::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  z-index: 999999;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+}
+
+/* Retro Loading Hourglass cursor class */
+.cursor-hourglass {
+  cursor: wait !important;
+}
+
+/* Custom typography settings */
+@font-face {
+  font-family: 'MS Sans Serif';
+  src: local('MS Sans Serif'), local('Tahoma'), local('Arial');
 }
