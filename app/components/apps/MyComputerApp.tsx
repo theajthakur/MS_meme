@@ -202,7 +202,7 @@ export default function MyComputerApp() {
             <div className="flex-1 space-y-4 text-xs">
               <div>
                 <h3 className="font-bold border-b border-zinc-400 pb-1">System:</h3>
-                <p className="mt-1 font-win-sans">Microsoft Windows 98</p>
+                <p className="mt-1 font-win-sans text-[#000080] font-bold">Microhard Door | theajthakur</p>
                 <p>Second Edition (Build 1998.SE)</p>
                 <p>Next.js Core Framework 16.2.9</p>
               </div>
@@ -312,7 +312,7 @@ export default function MyComputerApp() {
                 <strong>Design Philosophy:</strong> Windows 95/98 pixel accuracy, instant client responses, component modularity, and smooth React transitions.
               </p>
               <p className="text-zinc-600 mt-4 text-[10px]">
-                Copyright © 2026. Microsoft, Windows, and the Windows logo are registered trademarks of Microsoft Corporation in the United States and other countries. This is an educational tribute project.
+                Copyright © 2026. Microhard, Door, and the Door logo are registered trademarks of Microhard Corporation in the United States and other countries. Engineered by theajthakur.
               </p>
             </div>
           </div>

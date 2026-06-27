@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Microsoft Windows 98",
-  description: "Retro Windows 98 desktop environment containing a URL shortener client, MS Notepad documentation, MS Paint, and classic Minesweeper.",
+  title: "Microhard Door | theajthakur",
+  description: "Retro Microhard Door | theajthakur desktop environment containing a URL shortener client, Notepad documentation, Paint, and GTA: India.",
 };
 
 export default function RootLayout({

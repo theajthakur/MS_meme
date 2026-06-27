@@ -42,11 +42,11 @@ export default function Desktop() {
   const [windows, setWindows] = useState<WindowItem[]>([
     {
       id: "welcome",
-      title: "Welcome to Windows 98",
-      isOpen: true,
+      title: "Welcome to Microhard Door",
+      isOpen: false,
       isMinimized: false,
       isMaximized: false,
-      isActive: true,
+      isActive: false,
       zIndex: 100,
       x: 120,
       y: 80,
@@ -57,7 +57,7 @@ export default function Desktop() {
     {
       id: "url-shortener",
       title: "URL Shortener Wizard",
-      isOpen: true,
+      isOpen: false,
       isMinimized: false,
       isMaximized: false,
       isActive: false,
@@ -71,7 +71,7 @@ export default function Desktop() {
     {
       id: "readme",
       title: "README.txt - Notepad",
-      isOpen: true,
+      isOpen: false,
       isMinimized: false,
       isMaximized: false,
       isActive: false,
@@ -571,11 +571,11 @@ export default function Desktop() {
     setWindows([
       {
         id: "welcome",
-        title: "Welcome to Windows 98",
-        isOpen: true,
+        title: "Welcome to Microhard Door",
+        isOpen: false,
         isMinimized: false,
         isMaximized: false,
-        isActive: true,
+        isActive: false,
         zIndex: 100,
         x: 120,
         y: 80,
@@ -586,7 +586,7 @@ export default function Desktop() {
       {
         id: "url-shortener",
         title: "URL Shortener Wizard",
-        isOpen: true,
+        isOpen: false,
         isMinimized: false,
         isMaximized: false,
         isActive: false,
@@ -600,7 +600,7 @@ export default function Desktop() {
       {
         id: "readme",
         title: "README.txt - Notepad",
-        isOpen: true,
+        isOpen: false,
         isMinimized: false,
         isMaximized: false,
         isActive: false,
@@ -885,9 +885,9 @@ export default function Desktop() {
                     <span className="text-4xl">👋</span>
                   </div>
                   <div className="space-y-3">
-                    <h2 className="text-sm font-bold">Welcome to the URL Shortener OS!</h2>
+                    <h2 className="text-sm font-bold">Welcome to Microhard Door!</h2>
                     <p className="text-zinc-700 leading-normal">
-                      This developer showcase replicates the Microsoft Windows 98 desktop environment.
+                      This developer showcase replicates the Microhard Door | theajthakur desktop environment.
                     </p>
                     <p className="text-zinc-800 leading-normal font-semibold">
                       For the most immersive, pixel-perfect, and authentic experience, we highly recommend switching your browser to full screen mode.

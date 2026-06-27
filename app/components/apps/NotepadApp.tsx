@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 
 const INITIAL_TEXT = `=====================================================
-  MICROSOFT WINDOWS 98 - URL SHORTENER SHOWCASE README
+  MICROHARD DOOR - URL SHORTENER SHOWCASE README
 =====================================================
 
-Welcome to the Windows URL Shortener showcase project. This client is a 
-fully responsive, retro-styled recreation of the classic Windows 98 
+Welcome to the Microhard Door URL Shortener showcase project. This client is a 
+fully responsive, retro-styled recreation of the classic Microhard Door
 desktop interface, integrated with a FastAPI URL shortener backend.
 
 -----------------------------------------------------

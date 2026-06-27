@@ -57,37 +57,54 @@ export default function Window({
   // Drag constraints & clamped initial coordinates for mobile screens
   const [dragConstraints, setDragConstraints] = React.useState({ left: 0, right: 800, top: 0, bottom: 600 });
   const [coords, setCoords] = React.useState({ x: initialX, y: initialY });
+  const [responsiveSize, setResponsiveSize] = React.useState({ width, height });
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      const screenW = window.innerWidth;
-      const screenH = window.innerHeight;
+      const handleResize = () => {
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
 
-      // Determine clamped coordinates
-      const windowWidth = typeof width === "number" ? width : parseInt(String(width), 10) || 300;
-      const windowHeight = typeof height === "number" ? height : parseInt(String(height), 10) || 200;
+        // Parse and clamp width and height props
+        let targetW = typeof width === "number" ? width : parseInt(String(width), 10) || 600;
+        let targetH = typeof height === "number" ? height : parseInt(String(height), 10) || 400;
 
-      let targetX = initialX;
-      let targetY = initialY;
+        if (targetW > screenW - 8) {
+          targetW = screenW - 8;
+        }
+        if (targetH > screenH - 48) {
+          targetH = screenH - 48;
+        }
 
-      if (targetX + windowWidth > screenW) {
-        targetX = Math.max(4, screenW - windowWidth - 4);
-      }
-      if (targetY + windowHeight > screenH - 40) {
-        targetY = Math.max(4, screenH - windowHeight - 44);
-      }
+        setResponsiveSize({ width: targetW, height: targetH });
 
-      setCoords({
-        x: Math.max(4, Math.min(targetX, screenW - 40)),
-        y: Math.max(4, Math.min(targetY, screenH - 80)),
-      });
+        // Clamp coordinates
+        let targetX = initialX;
+        let targetY = initialY;
 
-      setDragConstraints({
-        left: -100, // allow partial left drag
-        right: Math.max(100, screenW - 60),
-        top: 0,
-        bottom: Math.max(100, screenH - 80),
-      });
+        if (targetX + targetW > screenW) {
+          targetX = Math.max(4, screenW - targetW - 4);
+        }
+        if (targetY + targetH > screenH - 40) {
+          targetY = Math.max(4, screenH - targetH - 44);
+        }
+
+        setCoords({
+          x: Math.max(4, Math.min(targetX, screenW - 40)),
+          y: Math.max(4, Math.min(targetY, screenH - 80)),
+        });
+
+        setDragConstraints({
+          left: 0,
+          right: Math.max(0, screenW - targetW),
+          top: 0,
+          bottom: Math.max(0, screenH - 40 - targetH),
+        });
+      };
+
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
     }
   }, [initialX, initialY, width, height]);
 
@@ -115,8 +132,8 @@ export default function Window({
               scale: 1,
             }
           : {
-              width: width,
-              height: height,
+              width: responsiveSize.width,
+              height: responsiveSize.height,
               scale: 1,
             }
       }
