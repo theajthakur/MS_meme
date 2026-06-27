@@ -153,6 +153,20 @@ export default function Desktop() {
       icon: <span className="text-sm select-none">❌</span>,
     },
     {
+      id: "gta-loader",
+      title: "Updating",
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      isActive: false,
+      zIndex: 160,
+      x: 200,
+      y: 180,
+      width: 380,
+      height: 150,
+      icon: <span className="text-sm select-none">⚙️</span>,
+    },
+    {
       id: "gta-graphic-error",
       title: "Fatal Error",
       isOpen: false,
@@ -182,6 +196,8 @@ export default function Desktop() {
   });
   const [spawnedTanks, setSpawnedTanks] = useState<{ id: string; x: number; y: number }[]>([]);
   const [cheatNotification, setCheatNotification] = useState("");
+  const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
+  const [videoDownloadPercent, setVideoDownloadPercent] = useState(0);
 
   const handleCheatCode = (cheat: string) => {
     setCheatNotification(`CHEAT CODE ACTIVATED: ${cheat}`);
@@ -204,6 +220,87 @@ export default function Desktop() {
       setWindows((prev) => prev.map((w) => ({ ...w, isOpen: false, isActive: false })));
     }
   };
+
+  // Start downloading the video in background on app load
+  useEffect(() => {
+    let active = true;
+    const downloadGtaVideo = async () => {
+      try {
+        const response = await fetch("/GTA_INDIA.mp4");
+        if (!response.ok) throw new Error("Status " + response.status);
+        if (!response.body) throw new Error("Response body not readable");
+
+        const contentLength = response.headers.get("content-length");
+        if (!contentLength) {
+          // Fallback if content-length header is not present
+          for (let i = 0; i <= 100; i += 5) {
+            if (!active) return;
+            setVideoDownloadPercent(i);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+          setVideoBlobUrl("/GTA_INDIA.mp4");
+          return;
+        }
+
+        const totalBytes = parseInt(contentLength, 10);
+        let loadedBytes = 0;
+        const reader = response.body.getReader();
+        const chunks: Uint8Array[] = [];
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          if (value) {
+            chunks.push(value);
+            loadedBytes += value.length;
+            const percent = Math.round((loadedBytes / totalBytes) * 100);
+            if (active) {
+              setVideoDownloadPercent(percent);
+            }
+          }
+        }
+
+        const blob = new Blob(chunks as any, { type: "video/mp4" });
+        const objUrl = URL.createObjectURL(blob);
+        if (active) {
+          setVideoBlobUrl(objUrl);
+          setVideoDownloadPercent(100);
+        }
+      } catch (err) {
+        console.error("GTA Video background prefetching failed, streaming fallback active:", err);
+        if (active) {
+          setVideoDownloadPercent(100);
+          setVideoBlobUrl("/GTA_INDIA.mp4");
+        }
+      }
+    };
+
+    downloadGtaVideo();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // When updating finishes, auto-close the loader and launch fullscreen game
+  useEffect(() => {
+    if (videoDownloadPercent === 100) {
+      const gtaLoader = windows.find((w) => w.id === "gta-loader");
+      if (gtaLoader?.isOpen) {
+        setWindows((prev) =>
+          prev.map((w) => {
+            if (w.id === "gta-loader") return { ...w, isOpen: false, isActive: false };
+            if (w.id === "gta-vice-city") return { ...w, isOpen: true, isMinimized: false, isActive: true };
+            return w;
+          })
+        );
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => console.log(err));
+        }
+      }
+    }
+  }, [videoDownloadPercent, windows]);
 
   // Intercept right-clicks (except child defaultPrevented elements) and Ctrl hotkeys
   useEffect(() => {
@@ -374,6 +471,11 @@ export default function Desktop() {
 
   const openApp = (id: string) => {
     if (id === "gta-vice-city") {
+      if (videoDownloadPercent < 100) {
+        // Direct to updating window dialog
+        openApp("gta-loader");
+        return;
+      }
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch((err) => console.log(err));
       }
@@ -593,6 +695,20 @@ export default function Desktop() {
         height: 140,
         icon: <span className="text-sm select-none">❌</span>,
       },
+      {
+        id: "gta-loader",
+        title: "Updating",
+        isOpen: false,
+        isMinimized: false,
+        isMaximized: false,
+        isActive: false,
+        zIndex: 160,
+        x: 200,
+        y: 180,
+        width: 380,
+        height: 150,
+        icon: <span className="text-sm select-none">⚙️</span>,
+      },
     ]);
   };
 
@@ -680,8 +796,8 @@ export default function Desktop() {
         </motion.div>
       ))}
 
-      {/* Desktop Grid Layout for Icons */}
-      <div className="absolute top-4 left-4 grid grid-flow-row gap-6 justify-start items-center z-0 select-none">
+      {/* Desktop Grid Layout for Icons - 2 rows flowing horizontally to prevent vertical clipping */}
+      <div className="absolute top-4 left-4 grid grid-rows-2 grid-flow-col gap-4 md:gap-6 justify-start items-center z-0 select-none overflow-x-auto max-w-[calc(100vw-32px)]">
         {desktopIcons.map((icon) => (
           <div
             key={icon.id}
@@ -876,6 +992,32 @@ export default function Desktop() {
                 </button>
               </div>
             )}
+            {win.id === "gta-loader" && (
+              <div className="flex flex-col h-full justify-between p-4 select-none text-black bg-[#c0c0c0] font-win-sans">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between text-xs font-bold">
+                    <span>Updating...</span>
+                    <span>{videoDownloadPercent}%</span>
+                  </div>
+                  {/* Retro Windows 98 Setup progress bar */}
+                  <div className="w-full h-5 bg-white border-win-in p-[2px] flex items-center">
+                    <div 
+                      className="h-full bg-[#000080]" 
+                      style={{ width: `${videoDownloadPercent}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-zinc-700 mt-1">
+                    Copying file: GTA_INDIA.mp4 to Local Disk (C:\)
+                  </span>
+                </div>
+                <button
+                  onClick={() => closeWindow("gta-loader")}
+                  className="border-win-button px-6 py-1 active:border-win-button-depressed outline-none self-end text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
             {win.id === "recycle-bin" && (
               <div className="flex flex-col h-full bg-[#c0c0c0] font-win-sans text-black select-none">
                 {/* Toolbar */}
@@ -946,7 +1088,7 @@ export default function Desktop() {
 
       {windows.find((w) => w.id === "gta-vice-city")?.isOpen && (
         <div className="fixed inset-0 z-[9999999] bg-black select-none pointer-events-none cursor-none flex items-center justify-center">
-          <GtaViceCityApp onVideoEnd={handleGtaVideoEnd} />
+          <GtaViceCityApp src={videoBlobUrl || undefined} onVideoEnd={handleGtaVideoEnd} />
         </div>
       )}
 

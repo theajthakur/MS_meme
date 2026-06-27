@@ -3,10 +3,11 @@
 import React, { useRef, useEffect } from "react";
 
 interface GtaViceCityAppProps {
+  src?: string;
   onVideoEnd?: () => void;
 }
 
-export default function GtaViceCityApp({ onVideoEnd }: GtaViceCityAppProps) {
+export default function GtaViceCityApp({ src = "/GTA_INDIA.mp4", onVideoEnd }: GtaViceCityAppProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -22,13 +23,13 @@ export default function GtaViceCityApp({ onVideoEnd }: GtaViceCityAppProps) {
         });
       }
     }
-  }, []);
+  }, [src]); // Re-trigger on source changes
 
   return (
     <div className="w-full h-full bg-black relative overflow-hidden select-none flex items-center justify-center cursor-none">
       <video
         ref={videoRef}
-        src="/GTA_INDIA.mp4"
+        src={src}
         style={{
           width: "100vh",
           height: "100vw",

@@ -54,6 +54,43 @@ export default function Window({
   // Dropdown menu state
   const [activeMenuIndex, setActiveMenuIndex] = React.useState<number | null>(null);
 
+  // Drag constraints & clamped initial coordinates for mobile screens
+  const [dragConstraints, setDragConstraints] = React.useState({ left: 0, right: 800, top: 0, bottom: 600 });
+  const [coords, setCoords] = React.useState({ x: initialX, y: initialY });
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const screenW = window.innerWidth;
+      const screenH = window.innerHeight;
+
+      // Determine clamped coordinates
+      const windowWidth = typeof width === "number" ? width : parseInt(String(width), 10) || 300;
+      const windowHeight = typeof height === "number" ? height : parseInt(String(height), 10) || 200;
+
+      let targetX = initialX;
+      let targetY = initialY;
+
+      if (targetX + windowWidth > screenW) {
+        targetX = Math.max(4, screenW - windowWidth - 4);
+      }
+      if (targetY + windowHeight > screenH - 40) {
+        targetY = Math.max(4, screenH - windowHeight - 44);
+      }
+
+      setCoords({
+        x: Math.max(4, Math.min(targetX, screenW - 40)),
+        y: Math.max(4, Math.min(targetY, screenH - 80)),
+      });
+
+      setDragConstraints({
+        left: -100, // allow partial left drag
+        right: Math.max(100, screenW - 60),
+        top: 0,
+        bottom: Math.max(100, screenH - 80),
+      });
+    }
+  }, [initialX, initialY, width, height]);
+
   if (!isOpen || isMinimized) return null;
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -67,7 +104,7 @@ export default function Window({
   return (
     <motion.div
       ref={windowRef}
-      initial={isMaximized ? { x: 0, y: 0 } : { x: initialX, y: initialY }}
+      initial={isMaximized ? { x: 0, y: 0 } : { x: coords.x, y: coords.y }}
       animate={
         isMaximized
           ? {
@@ -85,11 +122,16 @@ export default function Window({
       }
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       drag={!isMaximized}
+      dragConstraints={dragConstraints}
       dragControls={dragControls}
       dragListener={false}
       dragMomentum={false}
       dragElastic={0}
-      style={{ zIndex }}
+      style={{ 
+        zIndex,
+        maxWidth: "calc(100vw - 8px)",
+        maxHeight: "calc(100vh - 48px)"
+      }}
       onPointerDown={onFocus}
       className={`absolute flex flex-col border-win-out bg-[#c0c0c0] text-black overflow-hidden font-win-sans`}
     >
