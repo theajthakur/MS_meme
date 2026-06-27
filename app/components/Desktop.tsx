@@ -137,6 +137,20 @@ export default function Desktop() {
       height: 350,
       icon: <Trash2 size={14} className="text-zinc-700 select-none" />,
     },
+    {
+      id: "storage-error",
+      title: "Storage Error",
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      isActive: false,
+      zIndex: 150,
+      x: 180,
+      y: 160,
+      width: 360,
+      height: 180,
+      icon: <span className="text-sm select-none">❌</span>,
+    },
   ]);
 
   const [isStartOpen, setIsStartOpen] = useState(false);
@@ -437,6 +451,20 @@ export default function Desktop() {
         height: 350,
         icon: <Trash2 size={14} className="text-zinc-700 select-none" />,
       },
+      {
+        id: "storage-error",
+        title: "Storage Error",
+        isOpen: false,
+        isMinimized: false,
+        isMaximized: false,
+        isActive: false,
+        zIndex: 150,
+        x: 180,
+        y: 160,
+        width: 360,
+        height: 180,
+        icon: <span className="text-sm select-none">❌</span>,
+      },
     ]);
   };
 
@@ -648,12 +676,38 @@ export default function Desktop() {
             <UrlShortenerApp
               onAddToRecycleBin={handleAddToRecycleBin}
               historyRefreshTrigger={historyTrigger}
+              onStorageLimitReached={() => openApp("storage-error")}
             />
           )}
           {win.id === "readme" && <NotepadApp />}
           {win.id === "paint" && <PaintApp />}
           {win.id === "minesweeper" && <MinesweeperApp />}
           {win.id === "my-computer" && <MyComputerApp />}
+          {win.id === "storage-error" && (
+            <div className="flex flex-col h-full justify-between p-3 select-none text-black bg-[#c0c0c0] font-win-sans">
+              <div className="flex gap-4 items-center mt-1">
+                {/* Red cross circle error icon */}
+                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white text-xl font-bold font-win-mono shadow-md border-win-out-thin select-none shrink-0">
+                  X
+                </div>
+                <div className="flex-1 text-xs">
+                  <h3 className="font-bold mb-1">Local Disk (C:) Storage Full</h3>
+                  <p className="text-zinc-800">
+                    The URL Shortener database has reached the limit of 5 links (25.0 GB used of 25.0 GB allocated).
+                  </p>
+                  <p className="text-zinc-800 mt-1">
+                    Delete existing links or empty the Recycle Bin to free up space.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => closeWindow("storage-error")}
+                className="border-win-button font-bold py-1 px-8 active:border-win-button-depressed outline-none self-center text-xs mt-3.5"
+              >
+                OK
+              </button>
+            </div>
+          )}
           {win.id === "recycle-bin" && (
             <div className="flex flex-col h-full bg-[#c0c0c0] font-win-sans text-black select-none">
               {/* Toolbar */}

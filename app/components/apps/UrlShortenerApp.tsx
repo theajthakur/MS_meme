@@ -14,9 +14,10 @@ interface HistoryItem {
 interface UrlShortenerAppProps {
   onAddToRecycleBin: (item: HistoryItem) => void;
   historyRefreshTrigger: number;
+  onStorageLimitReached: () => void;
 }
 
-export default function UrlShortenerApp({ onAddToRecycleBin, historyRefreshTrigger }: UrlShortenerAppProps) {
+export default function UrlShortenerApp({ onAddToRecycleBin, historyRefreshTrigger, onStorageLimitReached }: UrlShortenerAppProps) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<HistoryItem | null>(null);
@@ -47,6 +48,12 @@ export default function UrlShortenerApp({ onAddToRecycleBin, historyRefreshTrigg
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
+
+    if (history.length >= 5) {
+      setError("Full Storage Error: Limit of 5 links reached (25.0 GB used). Delete some database links to free up storage space.");
+      onStorageLimitReached();
+      return;
+    }
 
     setLoading(true);
     setError(null);

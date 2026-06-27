@@ -1,29 +1,65 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Monitor, Network, Cpu, ShieldCheck } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Monitor, Network, Cpu, ShieldCheck, Activity, RefreshCw } from "lucide-react";
 
 export default function MyComputerApp() {
-  const [activeTab, setActiveTab] = useState<"general" | "network" | "credits">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "storage" | "network" | "credits">("general");
   const [pinging, setPinging] = useState(false);
   const [latency, setLatency] = useState<number | null>(null);
   const [pingError, setPingError] = useState<string | null>(null);
+  const [linksCount, setLinksCount] = useState(0);
+  const pingingRef = useRef(false);
+
+  // Load link count on mount and stay in sync with storage updates
+  useEffect(() => {
+    const updateStats = () => {
+      const stored = localStorage.getItem("url_shortener_history");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setLinksCount(parsed.length);
+        } catch (e) {}
+      } else {
+        setLinksCount(0);
+      }
+    };
+    updateStats();
+    
+    // Periodically sync stats in case they change without local storage event (same-tab actions)
+    const statSyncInterval = setInterval(updateStats, 1000);
+
+    window.addEventListener("storage", updateStats);
+    return () => {
+      clearInterval(statSyncInterval);
+      window.removeEventListener("storage", updateStats);
+    };
+  }, []);
+
+  const systemSpace = 35; // GB
+  const linksSpace = linksCount * 5; // GB
+  const usedSpace = systemSpace + linksSpace; // GB
+  const freeSpace = 64 - usedSpace; // GB
+  const usedPercent = (usedSpace / 64) * 100;
+
+  const getStorageColorClass = () => {
+    if (usedSpace < 50) return "bg-[#22c55e]"; // GREEN
+    if (usedSpace >= 50 && usedSpace <= 90) return "bg-[#0000ff]"; // BLUE
+    return "bg-[#ef4444]"; // RED
+  };
 
   const pingBackend = async () => {
+    if (pingingRef.current) return;
+    pingingRef.current = true;
     setPinging(true);
     setPingError(null);
     const start = performance.now();
     try {
-      // Fetch /api/shorten with empty or invalid POST to trigger fast validation response,
-      // or we can fetch a root test endpoint. Wait, our openapi.json showed "/short/" GET is a test endpoint!
-      // But /api/shorten is our Next.js endpoint. Let's see if we can query /api/shorten with GET (which will return 405 or 404 but tells us round-trip latency)
-      // Or we can query the backend openapi.json directly, or make a GET to /short/ which is faster.
-      // Let's create an API route for pinging or just call fetch on /openapi.json which is cached but fast.
-      // Let's check: we can fetch the Next.js API endpoint /api/shorten and measure the round trip.
+      // Fetch /api/shorten with empty or invalid POST to trigger fast validation response
       const res = await fetch("/api/shorten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: "" }), // Should return 400 validation error quickly
+        body: JSON.stringify({ url: "" }),
       });
       await res.json();
       const end = performance.now();
@@ -32,12 +68,18 @@ export default function MyComputerApp() {
       setPingError("Failed to calculate roundtrip latency.");
     } finally {
       setPinging(false);
+      pingingRef.current = false;
     }
   };
 
   useEffect(() => {
     if (activeTab === "network") {
       pingBackend();
+      // Poll latency constantly every 3 seconds
+      const interval = setInterval(pingBackend, 3000);
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [activeTab]);
 
@@ -54,6 +96,16 @@ export default function MyComputerApp() {
           }`}
         >
           General
+        </button>
+        <button
+          onClick={() => setActiveTab("storage")}
+          className={`px-3 py-1 text-xs cursor-default border-t border-x rounded-t transition-all outline-none ${
+            activeTab === "storage"
+              ? "bg-[#c0c0c0] border-t-white border-x-white font-bold -mb-[1px] z-10"
+              : "bg-[#b0b0b0] border-t-transparent border-x-transparent text-[#505050] hover:bg-[#b8b8b8]"
+          }`}
+        >
+          Storage (C:)
         </button>
         <button
           onClick={() => setActiveTab("network")}
@@ -79,6 +131,69 @@ export default function MyComputerApp() {
 
       {/* Tab Panels */}
       <div className="flex-1 border-win-in bg-[#dfdfdf] p-4 flex flex-col overflow-auto">
+        {activeTab === "storage" && (
+          <div className="space-y-4 text-xs select-none text-black flex-1 flex flex-col justify-between">
+            <div className="flex gap-4 items-start pb-2 border-b border-zinc-400">
+              <div className="flex items-center justify-center p-2 bg-[#c0c0c0] border-win-out w-14 h-14 shrink-0">
+                <span className="text-3xl">💽</span>
+              </div>
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 font-bold text-sm">
+                  <span>Local Disk (C:) Properties</span>
+                </div>
+                <div className="text-[10px] text-zinc-600">File system: FAT32</div>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 font-win-sans flex-1 py-2">
+              <div className="flex items-center gap-2">
+                <div className={`w-3.5 h-3.5 border-win-in ${getStorageColorClass()}`} />
+                <div className="flex-1 flex justify-between">
+                  <span>Used Space:</span>
+                  <span className="font-win-mono font-bold">{usedSpace.toFixed(1)} GB</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="w-3.5 h-3.5 border-win-in bg-[#a0a0a0]" />
+                <div className="flex-1 flex justify-between">
+                  <span>Free Space:</span>
+                  <span className="font-win-mono font-bold">{freeSpace.toFixed(1)} GB</span>
+                </div>
+              </div>
+
+              <div className="h-[2px] bg-[#808080] border-b border-b-white my-2" />
+
+              <div className="flex justify-between font-bold">
+                <span>Capacity:</span>
+                <span className="font-win-mono">64.0 GB</span>
+              </div>
+
+              <div className="mt-4 space-y-1">
+                <div className="flex justify-between text-[10px] font-semibold text-zinc-700">
+                  <span>Disk Utilization:</span>
+                  <span>{usedPercent.toFixed(1)}%</span>
+                </div>
+                
+                <div className="border-win-in h-[22px] w-full bg-[#dfdfdf] p-0.5 flex overflow-hidden">
+                  <div
+                    className={`h-full border-r border-[#808080] ${getStorageColorClass()}`}
+                    style={{ width: `${usedPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-win-out bg-[#c0c0c0] p-3 text-[10px] leading-relaxed text-zinc-700">
+              <div className="font-bold text-black mb-1">Disk Allocations:</div>
+              <ul className="list-disc pl-4 space-y-0.5">
+                <li>System files (fat-32 boot / drivers): <strong>35.0 GB</strong> (Static)</li>
+                <li>Link History database storage: <strong>{linksSpace.toFixed(1)} GB</strong> (5.0 GB per compressed link, max 5)</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
         {activeTab === "general" && (
           <div className="flex gap-6 items-start">
             <div className="flex flex-col items-center justify-center p-2 bg-[#c0c0c0] border-win-out w-20 h-20">
@@ -130,17 +245,34 @@ export default function MyComputerApp() {
                   <span>Connection State:</span>
                   <span className="text-green-800 font-bold">CONNECTED</span>
                 </div>
-                <div className="flex justify-between border-t border-zinc-400 pt-2 font-bold text-sm">
+                <div className="flex justify-between border-t border-zinc-400 pt-2 font-bold text-sm items-center">
                   <span>API Ping Latency:</span>
-                  {pinging ? (
-                    <span className="text-zinc-600 animate-pulse">Measuring...</span>
-                  ) : latency !== null ? (
-                    <span className={latency > 250 ? "text-yellow-700" : "text-green-700"}>
-                      {latency} ms
-                    </span>
-                  ) : (
-                    <span className="text-zinc-500">Unmeasured</span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {pinging ? (
+                      <>
+                        <RefreshCw size={12} className="animate-spin text-zinc-500" />
+                        <span className="text-zinc-600 animate-pulse">Measuring...</span>
+                      </>
+                    ) : latency !== null ? (
+                      <>
+                        <Activity
+                          size={12}
+                          className={`${
+                            latency > 300
+                              ? "text-red-600"
+                              : latency > 150
+                              ? "text-yellow-600 animate-pulse"
+                              : "text-green-600 animate-pulse"
+                          }`}
+                        />
+                        <span className={latency > 250 ? "text-yellow-700" : "text-green-700"}>
+                          {latency} ms
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-zinc-500">Unmeasured</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
