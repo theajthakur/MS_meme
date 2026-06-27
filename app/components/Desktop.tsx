@@ -152,6 +152,20 @@ export default function Desktop() {
       height: 180,
       icon: <span className="text-sm select-none">❌</span>,
     },
+    {
+      id: "gta-graphic-error",
+      title: "Fatal Error",
+      isOpen: false,
+      isMinimized: false,
+      isMaximized: false,
+      isActive: false,
+      zIndex: 200,
+      x: 200,
+      y: 180,
+      width: 320,
+      height: 140,
+      icon: <span className="text-sm select-none">❌</span>,
+    },
   ]);
 
   const [isStartOpen, setIsStartOpen] = useState(false);
@@ -287,6 +301,21 @@ export default function Desktop() {
       localStorage.removeItem("url_shortener_history");
       setHistoryTrigger(p => p + 1);
     }
+  };
+
+  const handleGtaVideoEnd = () => {
+    // 1. Exit fullscreen if active
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err) => console.error("Error exiting fullscreen:", err));
+    }
+    // 2. Close GTA India game window
+    setWindows((prev) =>
+      prev.map((w) =>
+        w.id === "gta-vice-city" ? { ...w, isOpen: false, isActive: false } : w
+      )
+    );
+    // 3. Trigger graphic card not supported fatal error popup
+    openApp("gta-graphic-error");
   };
 
   // Load deleted links and check welcome screen state on mount
@@ -550,6 +579,20 @@ export default function Desktop() {
         height: 180,
         icon: <span className="text-sm select-none">❌</span>,
       },
+      {
+        id: "gta-graphic-error",
+        title: "Fatal Error",
+        isOpen: false,
+        isMinimized: false,
+        isMaximized: false,
+        isActive: false,
+        zIndex: 200,
+        x: 200,
+        y: 180,
+        width: 320,
+        height: 140,
+        icon: <span className="text-sm select-none">❌</span>,
+      },
     ]);
   };
 
@@ -811,6 +854,28 @@ export default function Desktop() {
                 </button>
               </div>
             )}
+            {win.id === "gta-graphic-error" && (
+              <div className="flex flex-col h-full justify-between p-3 select-none text-black bg-[#c0c0c0] font-win-sans">
+                <div className="flex gap-4 items-center mt-1">
+                  {/* Red cross circle error icon */}
+                  <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white text-xl font-bold font-win-mono shadow-md border-win-out-thin select-none shrink-0">
+                    X
+                  </div>
+                  <div className="flex-1 text-xs">
+                    <h3 className="font-bold mb-1">Fatal Error</h3>
+                    <p className="text-zinc-800">
+                      graphic card not supported
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => closeWindow("gta-graphic-error")}
+                  className="border-win-button font-bold py-1 px-8 active:border-win-button-depressed outline-none self-center text-xs mt-3"
+                >
+                  OK
+                </button>
+              </div>
+            )}
             {win.id === "recycle-bin" && (
               <div className="flex flex-col h-full bg-[#c0c0c0] font-win-sans text-black select-none">
                 {/* Toolbar */}
@@ -881,7 +946,7 @@ export default function Desktop() {
 
       {windows.find((w) => w.id === "gta-vice-city")?.isOpen && (
         <div className="fixed inset-0 z-[9999999] bg-black select-none pointer-events-none cursor-none flex items-center justify-center">
-          <GtaViceCityApp />
+          <GtaViceCityApp onVideoEnd={handleGtaVideoEnd} />
         </div>
       )}
 
