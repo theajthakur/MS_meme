@@ -198,6 +198,13 @@ export default function Desktop() {
   const [cheatNotification, setCheatNotification] = useState("");
   const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
   const [videoDownloadPercent, setVideoDownloadPercent] = useState(0);
+  const [textSelectionMenu, setTextSelectionMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    hasText: boolean;
+    isInput: boolean;
+  }>({ visible: false, x: 0, y: 0, hasText: false, isInput: false });
 
   const handleCheatCode = (cheat: string) => {
     setCheatNotification(`CHEAT CODE ACTIVATED: ${cheat}`);
@@ -386,10 +393,58 @@ export default function Desktop() {
     window.addEventListener("contextmenu", handleContextMenu);
     window.addEventListener("keydown", handleKeyDown);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    // Mobile text selection popup
+    const handleTouchEnd = () => {
+      // Small delay to let the browser finalize the selection
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const selectedText = selection?.toString().trim() ?? "";
+        const active = document.activeElement;
+        const isInputEl =
+          active instanceof HTMLInputElement ||
+          active instanceof HTMLTextAreaElement;
+
+        if (selectedText.length > 0 || isInputEl) {
+          let x = window.innerWidth / 2;
+          let y = 100;
+
+          // Try to position near the selection
+          if (selection && selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            if (rect.width > 0 || rect.height > 0) {
+              x = Math.min(rect.left + rect.width / 2, window.innerWidth - 110);
+              y = Math.max(rect.top - 52, 8);
+            }
+          }
+
+          setTextSelectionMenu({
+            visible: selectedText.length > 0 || isInputEl,
+            x,
+            y,
+            hasText: selectedText.length > 0,
+            isInput: isInputEl,
+          });
+        } else {
+          setTextSelectionMenu((prev) => ({ ...prev, visible: false }));
+        }
+      }, 100);
+    };
+
+    const handleTouchStart = () => {
+      setTextSelectionMenu((prev) => ({ ...prev, visible: false }));
+    };
+
+    document.addEventListener("touchend", handleTouchEnd);
+    document.addEventListener("touchstart", handleTouchStart);
+
     return () => {
       window.removeEventListener("contextmenu", handleContextMenu);
       window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchstart", handleTouchStart);
     };
   }, []);
 
@@ -1111,6 +1166,62 @@ export default function Desktop() {
         onToggleStart={() => setIsStartOpen(!isStartOpen)}
         onToggleWindow={handleToggleWindow}
       />
+
+      {/* Mobile Text Selection Popup */}
+      {textSelectionMenu.visible && (
+        <>
+          <div
+            onClick={() => setTextSelectionMenu((p) => ({ ...p, visible: false }))}
+            className="fixed inset-0 z-[9999996] bg-transparent"
+          />
+          <div
+            style={{ top: textSelectionMenu.y, left: textSelectionMenu.x, transform: "translateX(-50%)" }}
+            className="fixed z-[9999997] flex items-center bg-[#1a1a1a] rounded shadow-xl overflow-hidden border border-white/10 select-none"
+          >
+            {textSelectionMenu.hasText && (
+              <button
+                onClick={async () => {
+                  const text = window.getSelection()?.toString() ?? "";
+                  if (text && navigator.clipboard) {
+                    try {
+                      await navigator.clipboard.writeText(text);
+                    } catch {
+                      /* clipboard blocked */
+                    }
+                  }
+                  window.getSelection()?.removeAllRanges();
+                  setTextSelectionMenu((p) => ({ ...p, visible: false }));
+                }}
+                className="px-4 py-2 text-white text-xs font-bold hover:bg-white/10 active:bg-white/20 border-r border-white/10"
+              >
+                Copy
+              </button>
+            )}
+            {textSelectionMenu.isInput && (
+              <button
+                onClick={async () => {
+                  const active = document.activeElement as HTMLInputElement | HTMLTextAreaElement;
+                  if (navigator.clipboard && active) {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      const start = active.selectionStart ?? active.value.length;
+                      const end = active.selectionEnd ?? active.value.length;
+                      active.value = active.value.slice(0, start) + text + active.value.slice(end);
+                      active.dispatchEvent(new Event("input", { bubbles: true }));
+                    } catch {
+                      /* clipboard read blocked */
+                    }
+                  }
+                  setTextSelectionMenu((p) => ({ ...p, visible: false }));
+                }}
+                className="px-4 py-2 text-white text-xs font-bold hover:bg-white/10 active:bg-white/20"
+              >
+                Paste
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Retro Right-Click Context Menu */}
       {contextMenu.visible && (

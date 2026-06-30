@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Monitor, Network, Cpu, ShieldCheck, Activity, RefreshCw } from "lucide-react";
+import Win98TabBar from "../ui/Win98TabBar";
 
 export default function MyComputerApp() {
   const [activeTab, setActiveTab] = useState<"general" | "storage" | "network" | "credits">("general");
@@ -9,6 +10,7 @@ export default function MyComputerApp() {
   const [latency, setLatency] = useState<number | null>(null);
   const [pingError, setPingError] = useState<string | null>(null);
   const [linksCount, setLinksCount] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const pingingRef = useRef(false);
 
   // Load link count on mount and stay in sync with storage updates
@@ -62,6 +64,7 @@ export default function MyComputerApp() {
       await res.json();
       const end = performance.now();
       setLatency(Math.round(end - start));
+      setLastUpdated(new Date().toLocaleTimeString());
     } catch (e) {
       setPingError("Failed to calculate roundtrip latency.");
     } finally {
@@ -70,62 +73,25 @@ export default function MyComputerApp() {
     }
   };
 
+  // Ping once when switching to the network tab (no auto-refresh)
   useEffect(() => {
     if (activeTab === "network") {
       pingBackend();
-      // Poll latency constantly every 3 seconds
-      const interval = setInterval(pingBackend, 3000);
-      return () => {
-        clearInterval(interval);
-      };
     }
   }, [activeTab]);
 
   return (
     <div className="flex flex-col h-full bg-[#c0c0c0] font-win-sans text-black select-none p-1">
-      {/* Tabs */}
-      <div className="flex border-b border-[#808080] mb-3">
-        <button
-          onClick={() => setActiveTab("general")}
-          className={`px-3 py-1 text-xs cursor-default border-t border-x rounded-t transition-all outline-none ${
-            activeTab === "general"
-              ? "bg-[#c0c0c0] border-t-white border-x-white font-bold -mb-[1px] z-10"
-              : "bg-[#b0b0b0] border-t-transparent border-x-transparent text-[#505050] hover:bg-[#b8b8b8]"
-          }`}
-        >
-          General
-        </button>
-        <button
-          onClick={() => setActiveTab("storage")}
-          className={`px-3 py-1 text-xs cursor-default border-t border-x rounded-t transition-all outline-none ${
-            activeTab === "storage"
-              ? "bg-[#c0c0c0] border-t-white border-x-white font-bold -mb-[1px] z-10"
-              : "bg-[#b0b0b0] border-t-transparent border-x-transparent text-[#505050] hover:bg-[#b8b8b8]"
-          }`}
-        >
-          Storage (C:)
-        </button>
-        <button
-          onClick={() => setActiveTab("network")}
-          className={`px-3 py-1 text-xs cursor-default border-t border-x rounded-t transition-all outline-none ${
-            activeTab === "network"
-              ? "bg-[#c0c0c0] border-t-white border-x-white font-bold -mb-[1px] z-10"
-              : "bg-[#b0b0b0] border-t-transparent border-x-transparent text-[#505050] hover:bg-[#b8b8b8]"
-          }`}
-        >
-          Performance
-        </button>
-        <button
-          onClick={() => setActiveTab("credits")}
-          className={`px-3 py-1 text-xs cursor-default border-t border-x rounded-t transition-all outline-none ${
-            activeTab === "credits"
-              ? "bg-[#c0c0c0] border-t-white border-x-white font-bold -mb-[1px] z-10"
-              : "bg-[#b0b0b0] border-t-transparent border-x-transparent text-[#505050] hover:bg-[#b8b8b8]"
-          }`}
-        >
-          Credits
-        </button>
-      </div>
+      <Win98TabBar
+        tabs={[
+          { id: "general", label: "General" },
+          { id: "storage", label: "Storage (C:)" },
+          { id: "network", label: "Performance" },
+          { id: "credits", label: "Credits" },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as "general" | "storage" | "network" | "credits")}
+      />
 
       {/* Tab Panels */}
       <div className="flex-1 border-win-in bg-[#dfdfdf] p-4 flex flex-col overflow-auto">
@@ -281,13 +247,23 @@ export default function MyComputerApp() {
               )}
             </div>
 
-            <button
-              onClick={pingBackend}
-              disabled={pinging}
-              className="border-win-button font-bold py-1.5 active:border-win-button-depressed outline-none self-end px-6 text-xs"
-            >
-              Test Latency Again
-            </button>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] text-zinc-500 font-win-mono">
+                {lastUpdated ? (
+                  <span>Last updated: <strong>{lastUpdated}</strong></span>
+                ) : (
+                  <span className="italic">Not yet measured</span>
+                )}
+              </div>
+              <button
+                onClick={pingBackend}
+                disabled={pinging}
+                className="border-win-button font-bold py-1.5 active:border-win-button-depressed outline-none px-6 text-xs flex items-center gap-1.5"
+              >
+                {pinging ? <RefreshCw size={11} className="animate-spin" /> : null}
+                Update
+              </button>
+            </div>
           </div>
         )}
 

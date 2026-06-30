@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from "axios";
 
 // Reusable Axios instance pointing to the FastAPI backend
-const backendUrl = process.env.BACKEND_URL || "https://fastapi-url-shortener-a6zc.onrender.com";
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://fastapi-url-shortener-a6zc.onrender.com";
 
 const api: AxiosInstance = axios.create({
   baseURL: backendUrl,
@@ -38,7 +38,7 @@ api.interceptors.response.use(
 
     if ((isNetworkError || isServerError) && config._retryCount < MAX_RETRIES) {
       config._retryCount += 1;
-      
+
       console.warn(
         `[Axios Retry] Request failed (${error.message}). Retrying attempt ${config._retryCount}/${MAX_RETRIES} in ${RETRY_DELAY_MS}ms...`
       );
